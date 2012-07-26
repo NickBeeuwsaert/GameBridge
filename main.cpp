@@ -56,6 +56,9 @@ int main(int argc, char*argv[]){
 	  return(EXIT_FAILURE);
 	}
 	cfg.lookupValue("controller0.sensitivity", sensitivity);
+	int width=800, height=600;
+	cfg.lookupValue("width", width);
+	cfg.lookupValue("height", height);
 	while(running){
 		SDL_Delay(1000/60);
 		float xPos = SDL_JoystickGetAxis(stick, 0) / 32767.0;
@@ -64,7 +67,11 @@ int main(int argc, char*argv[]){
 			coords[0] += (sensitivity * xPos);
 		if(fabs(yPos) > .05)
 			coords[1] += (sensitivity * yPos);
-		//CGWarpMouseCursorPosition((CGPoint){coords[0], coords[1]});
+		if(coords[0] < 0 || coords[0] > width)
+			coords[0] = max(min(float(width), coords[0]), 0.0f);
+		if(coords[1] < 0 || coords[1] > height)
+			coords[1] = max(min(float(height), coords[1]), 0.0f);
+		CGWarpMouseCursorPosition((CGPoint){coords[0], coords[1]});
 		CGEventRef event = CGEventCreateMouseEvent(NULL,kCGEventMouseMoved , (CGPoint){coords[0], coords[1]}, 0);
 		CGEventPost(kCGHIDEventTap, event);
 		CFRelease(event);
@@ -76,6 +83,7 @@ int main(int argc, char*argv[]){
 					coords[axis] += int(num * sensitivity);
 					printf("%s: %f\n", axis==0?"X":"Y", num);
 					// SDL_WarpMouse(coords[0], coords[1]); */
+					//printf("AXis Event!\n");
 				}break;
 				case SDL_JOYBUTTONDOWN:{
 					bool left_mouse = false;

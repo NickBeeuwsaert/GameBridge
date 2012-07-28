@@ -4,7 +4,6 @@
 #include <libconfig.h++>
 #include <iostream>
 #include <stdarg.h>
-#include <pthread.h>
 using namespace libconfig;
 using namespace std;
 std::string format(const std::string &fmt, ...) {
@@ -27,42 +26,7 @@ std::string format(const std::string &fmt, ...) {
        }
 }
 
-CGPoint point;
-CGEventRef MouseMoveListener(CGEventTapProxy proxy, CGEventType type,
-                  CGEventRef event, void *refcon)
-{
-		point = CGEventGetLocation(event); 
-		printf("Mouse move to: %f %f\n", float(point.x), float(point.y));
-	return event;
-}
-void *start_event_listener(void*){
-	 CFMachPortRef      eventTap;
-    CGEventMask        eventMask;
-    CFRunLoopSourceRef runLoopSource;
-	eventTap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, kCGEventTapOptionListenOnly,
-                            CGEventMaskBit(kCGEventMouseMoved), MouseMoveListener, NULL);
-	if (!eventTap) {
-        fprintf(stderr, "failed to create event tap\n");
-        exit(1);
-    }
 
-    // Create a run loop source.
-    runLoopSource = CFMachPortCreateRunLoopSource(
-                        kCFAllocatorDefault, eventTap, 0);
-
-    // Add to the current run loop.
-    CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource,
-                       kCFRunLoopCommonModes);
-
-    // Enable the event tap.
-    CGEventTapEnable(eventTap, true);
-
-    // Set it all running.
-    CFRunLoopRun();
-
-    // In a real program, one would have arranged for cleaning up.
-
-}
 string button_str = "controller%i.button%i.%s"; // controller index, button index property
 int main(int argc, char*argv[]){
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -77,8 +41,8 @@ int main(int argc, char*argv[]){
 	//SDL_Surface *screen = SDL_SetVideoMode(480,320, 32, SDL_HWSURFACE);	
 	bool running = true;
 	float sensitivity = 10;
-	//pthread_t thread1;
-	//pthread_create( &thread1, NULL, start_event_listener, NULL);
+
+	CGPoint point;
 
 	Config cfg;
  	try

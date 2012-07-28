@@ -1,5 +1,5 @@
 OBJS = main.o
-LIBS = `pkg-config sdl --libs` `pkg-config libconfig++ --libs`
+LIBS = `pkg-config sdl --libs` `pkg-config libconfig++ --libs` -lpthread
 CFLAGS = `pkg-config sdl --cflags` `pkg-config libconfig++ --cflags`
 all: $(OBJS)
 	g++ -o main main.o $(LIBS)

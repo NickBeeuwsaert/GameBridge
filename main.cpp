@@ -4,6 +4,7 @@
 #include <libconfig.h++>
 #include <iostream>
 #include <stdarg.h>
+#include <pthread.h>
 using namespace libconfig;
 using namespace std;
 std::string format(const std::string &fmt, ...) {
@@ -25,20 +26,60 @@ std::string format(const std::string &fmt, ...) {
            size*=2;
        }
 }
+
+CGPoint point;
+CGEventRef MouseMoveListener(CGEventTapProxy proxy, CGEventType type,
+                  CGEventRef event, void *refcon)
+{
+		point = CGEventGetLocation(event); 
+		printf("Mouse move to: %f %f\n", float(point.x), float(point.y));
+	return event;
+}
+void *start_event_listener(void*){
+	 CFMachPortRef      eventTap;
+    CGEventMask        eventMask;
+    CFRunLoopSourceRef runLoopSource;
+	eventTap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, kCGEventTapOptionListenOnly,
+                            CGEventMaskBit(kCGEventMouseMoved), MouseMoveListener, NULL);
+	if (!eventTap) {
+        fprintf(stderr, "failed to create event tap\n");
+        exit(1);
+    }
+
+    // Create a run loop source.
+    runLoopSource = CFMachPortCreateRunLoopSource(
+                        kCFAllocatorDefault, eventTap, 0);
+
+    // Add to the current run loop.
+    CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource,
+                       kCFRunLoopCommonModes);
+
+    // Enable the event tap.
+    CGEventTapEnable(eventTap, true);
+
+    // Set it all running.
+    CFRunLoopRun();
+
+    // In a real program, one would have arranged for cleaning up.
+
+}
 string button_str = "controller%i.button%i.%s"; // controller index, button index property
 int main(int argc, char*argv[]){
 	SDL_Init(SDL_INIT_EVERYTHING);
 	
 	SDL_Event  evt;
 	if(SDL_NumJoysticks() == 0){
-		printf("No joysticks detected!");
+		printf("No joysticks detected!\n");
+		return 0;
 	}
+	printf("Detected %d joysticks\n", SDL_NumJoysticks());
 	SDL_Joystick *stick = SDL_JoystickOpen(0);
 	//SDL_Surface *screen = SDL_SetVideoMode(480,320, 32, SDL_HWSURFACE);	
 	bool running = true;
 	float sensitivity = 10;
-	float coords[] = {0,0};
-	SDL_WarpMouse(0,0);
+	//pthread_t thread1;
+	//pthread_create( &thread1, NULL, start_event_listener, NULL);
+
 	Config cfg;
  	try
   	{
@@ -56,25 +97,40 @@ int main(int argc, char*argv[]){
 	  return(EXIT_FAILURE);
 	}
 	cfg.lookupValue("controller0.sensitivity", sensitivity);
-	int width=800, height=600;
-	cfg.lookupValue("width", width);
-	cfg.lookupValue("height", height);
+
+    CGRect screenBounds = CGDisplayBounds(CGMainDisplayID());
 	while(running){
-		SDL_Delay(1000/60);
+		SDL_Delay(1000/100);
+		// 2^16 / 2 == signed 16 bit integer
 		float xPos = SDL_JoystickGetAxis(stick, 0) / 32767.0;
 		float yPos = SDL_JoystickGetAxis(stick, 1) / 32767.0;
+		CGEventRef posEvent = CGEventCreate(NULL);
+		point = CGEventGetLocation(posEvent); 
+		float dX= (sensitivity * xPos), dY= (sensitivity * yPos);
+		CFRelease(posEvent);
+		point.x = max(min(float(screenBounds.size.width), float(point.x)), 0.0f);
+		point.y = max(min(float(screenBounds.size.height), float(point.y)), 0.0f);
+		//point.x += 5;
+		//CGWarpMouseCursorPosition(point);
+
 		if(fabs(xPos) > .05)
-			coords[0] += (sensitivity * xPos);
+			point.x += dX;
 		if(fabs(yPos) > .05)
-			coords[1] += (sensitivity * yPos);
-		if(coords[0] < 0 || coords[0] > width)
-			coords[0] = max(min(float(width), coords[0]), 0.0f);
-		if(coords[1] < 0 || coords[1] > height)
-			coords[1] = max(min(float(height), coords[1]), 0.0f);
-		CGWarpMouseCursorPosition((CGPoint){coords[0], coords[1]});
-		CGEventRef event = CGEventCreateMouseEvent(NULL,kCGEventMouseMoved , (CGPoint){coords[0], coords[1]}, 0);
-		CGEventPost(kCGHIDEventTap, event);
-		CFRelease(event);
+			point.y += dY;
+		if(fabs(xPos) > .05 || fabs(xPos) > .05){
+			CGEventRef event = CGEventCreateMouseEvent(CGEventSourceCreate(kCGEventSourceStateHIDSystemState),kCGEventMouseMoved , point,  0);
+
+			CGEventSetIntegerValueField(event, kCGMouseEventClickState, 1);
+
+			if(fabs(xPos) > .05)
+				CGEventSetIntegerValueField(event, kCGMouseEventDeltaX, dX);
+			if(fabs(yPos) > .05)
+				CGEventSetIntegerValueField(event, kCGMouseEventDeltaY, dY);
+
+			CGEventSetType(event, kCGEventMouseMoved);// apparently there is a apple bug that requires this...
+			CGEventPost(kCGHIDEventTap, event);
+			CFRelease(event);
+		}
 		while(SDL_PollEvent(&evt)){
 			switch(evt.type){
 				case SDL_JOYAXISMOTION:{
@@ -91,13 +147,13 @@ int main(int argc, char*argv[]){
 					int keycode = -1;
 					if(cfg.lookupValue(format(button_str, evt.jbutton.which, evt.jbutton.button, "left_mouse"), left_mouse)){
 						if(left_mouse){
-							CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventLeftMouseDown, (CGPoint){coords[0], coords[1]}, 0);
+							CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventLeftMouseDown, point, 0);
 							CGEventPost(kCGHIDEventTap, event);
 							CFRelease(event);
 						}
 					}else if(cfg.lookupValue(format(button_str, evt.jbutton.which, evt.jbutton.button, "right_mouse"), right_mouse)){
 						if(right_mouse){
-							CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventRightMouseDown, (CGPoint){coords[0], coords[1]}, 0);
+							CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventRightMouseDown, point, 0);
 							CGEventPost(kCGHIDEventTap, event);
 							CFRelease(event);
 						}
@@ -116,13 +172,13 @@ int main(int argc, char*argv[]){
 					printf("%i\n", evt.jbutton.button);
 					if(cfg.lookupValue(format(button_str, evt.jbutton.which, evt.jbutton.button, "left_mouse"), left_mouse)){
 						if(left_mouse){
-							CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventLeftMouseUp, (CGPoint){coords[0], coords[1]}, 0);
+							CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventLeftMouseUp, point, 0);
 							CGEventPost(kCGHIDEventTap, event);
 							CFRelease(event);
 						}
 					}else if(cfg.lookupValue(format(button_str, evt.jbutton.which, evt.jbutton.button, "right_mouse"), right_mouse)){
 						if(right_mouse){
-							CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventRightMouseUp, (CGPoint){coords[0], coords[1]}, 0);
+							CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventRightMouseUp, point, 0);
 							CGEventPost(kCGHIDEventTap, event);
 							CFRelease(event);
 						}

@@ -161,5 +161,6 @@ int main(int argc, char*argv[]){
 	for(int i = 0; i < numJoysticks; i++){
 		SDL_JoystickClose(sticks[i]);
 	}
+	delete [] sticks;
 	return 0;
 }

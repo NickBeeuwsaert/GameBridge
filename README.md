@@ -12,8 +12,8 @@ Config files are laid out as below:
     |
     |-buttons
     | |-button# -> (OSX keycode)
-    | |-right_mouse -> (boolean, can be true or false, it's not checked)
-    | |-left_mouse -> (boolean, can be true or false, it's not checked)
+    | |-right_mouse -> boolean, true to click the right mouse 
+    | |-left_mouse -> boolean, true to click the left mouse
     | |-quit -> if I should exit the program
     |-axis#
     | |-mouse_x -> boolean, whether or not to move on the X axis

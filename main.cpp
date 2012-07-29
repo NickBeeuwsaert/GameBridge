@@ -85,10 +85,12 @@ int main(int argc, char*argv[]){
 
 		
 			if(fabs(xPos) > .05 || fabs(xPos) > .05){
-				if(fabs(xPos) > .05)
+				if(point.x + dX < screenBounds.size.width && point.x + dX > 0 && fabs(xPos) > .05)
 					point.x += dX;
-				if(fabs(yPos) > .05)
+				//else dX = 0;
+				if(point.y + dY < screenBounds.size.height && point.y + dY > 0 && fabs(yPos) > .05)
 					point.y += dY;
+				//else dY = 0;
 				CGEventRef event = CGEventCreateMouseEvent(CGEventSourceCreate(kCGEventSourceStateHIDSystemState),kCGEventMouseMoved , point,  0);
 
 				CGEventSetIntegerValueField(event, kCGMouseEventClickState, 1);

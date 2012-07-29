@@ -1,7 +1,7 @@
 README
 ======
 
-So! GameBridge(That's a crappy name, ain't it?) is for mapping a gamepad to a keyboard so you can use the gamepad in a game that doesn't support you gamepad... for *FREE*!
+So! GameBridge(That's a crappy name, ain't it?) is for mapping a gamepad to a keyboard so you can use the gamepad in a game that doesn't support your gamepad... for *FREE*!
 
 Config Layout
 =============
@@ -14,6 +14,10 @@ Config files are laid out as below:
     | |-button# -> (OSX keycode)
     | |-right_mouse -> (boolean, can be true or false, it's not checked)
     | |-left_mouse -> (boolean, can be true or false, it's not checked)
+    | |-quit -> if I should exit the program
+    |-axis#
+    | |-mouse_x -> boolean, whether or not to move on the X axis
+    | |-mouse_y -> boolean, whether or not to move on the Y axis
     |-sensitivity -> integer, how sensitive the joystick will be
 
 

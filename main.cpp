@@ -72,13 +72,16 @@ int main(int argc, char*argv[]){
 		SDL_Delay(1000/60);
 		for(int i = 0; i < numJoysticks; i++){
 			if(!cfg.exists(format("controller%d",i))) continue;
-			float sensitivity = 10;
-			cfg.lookupValue(format("controller%d.sensitivity",i), sensitivity);
 			// 2^16 / 2 == signed 16 bit integer
 			CGEventRef eventPos= CGEventCreate(NULL);
 			point = CGEventGetLocation(eventPos);
 			CFRelease(eventPos);
+			// I would do a num_Axes/2 and then get both axes at the same time (like int the huge comment block) but I don't know if all 
+			// game pads have an even number of axes, also this way you could use the X on one joystick and the Y on the other
 			for(int axis = 0; axis < SDL_JoystickNumAxes(sticks[i]); axis ++){
+				float threshold = 0.05, sensitivity = 10.0;
+				cfg.lookupValue(format("controller%d.axis%d.sensitivity",i,axis), sensitivity);
+				cfg.lookupValue(format("controller%d.axis%d.threshold",i,axis), threshold);
 				bool mouse_x = false, mouse_y = false;
 				cfg.lookupValue(format("controller%d.axis%d.mouse_x",i, axis), mouse_x);
 				cfg.lookupValue(format("controller%d.axis%d.mouse_y",i, axis), mouse_y);
@@ -88,7 +91,7 @@ int main(int argc, char*argv[]){
 
 
 
-				if(fabs(pos) > 0.05){
+				if(fabs(pos) > threshold){
 					if(mouse_x)
 						point.x += delta;
 					if(mouse_y)
@@ -166,7 +169,7 @@ int main(int argc, char*argv[]){
 					bool left_mouse = false;
 					bool right_mouse = false;
 					int keycode = -1;
-					printf("Gamepad #%d pressed button #%d\n", evt.jbutton.which, evt.jbutton.button);
+					//printf("Gamepad #%d pressed button #%d\n", evt.jbutton.which, evt.jbutton.button);
 					if(cfg.lookupValue(format(button_str, evt.jbutton.which, evt.jbutton.button, "left_mouse"), left_mouse)){
 						if(left_mouse){
 							CGEventRef event = CGEventCreateMouseEvent(NULL, kCGEventLeftMouseUp, point, 0);

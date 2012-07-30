@@ -10,15 +10,15 @@ Config files are laid out as below:
 
     controller#
     |
-    |-buttons
-    | |-button# -> (OSX keycode)
+    |-button# -> (OSX keycode)
     | |-right_mouse -> boolean, true to click the right mouse 
     | |-left_mouse -> boolean, true to click the left mouse
     | |-quit -> if I should exit the program
     |-axis#
     | |-mouse_x -> boolean, whether or not to move on the X axis
     | |-mouse_y -> boolean, whether or not to move on the Y axis
-    |-sensitivity -> integer, how sensitive the joystick will be
+    | |-threshold -> at what percent should the axis start registering events
+    | |-sensitivity-> how sensitive the axis will be
 
 
 

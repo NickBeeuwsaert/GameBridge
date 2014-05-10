@@ -1,3 +1,6 @@
+NOTE
+====
+This project is pretty bad, I want to write a new one that makes more sense (and mayeb uses vim like keybindings)
 README
 ======
 
